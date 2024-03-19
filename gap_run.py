@@ -10,27 +10,13 @@ import numpy as np
 
 import tvm
 
-class CompiledModuleResult:
-    def __init__(self,mod: tvm.ir.IRModule,match_inputs,match_output):
-        self.mod=mod
-        self.match_inputs=match_inputs
-        self.match_output=match_output
-
-class CompiledModule:
-    def __init__(self):
-        return
-    @classmethod
-    def define_compiled_module(cls,mod: tvm.ir.IRModule,match_inputs,match_output):
-        cls.result=CompiledModuleResult(mod=mod,match_inputs=match_inputs,match_output=match_output)
-
 def gap_run_driver(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output"):
     pathlib.Path(output_path).mkdir(parents=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True)
     np.random.seed(0)
     target_name="gap9"
-    res=CompiledModuleResult(None,[{"name":"input_0","size":1024}],{"size":1024})
-    match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
+    res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
                     target_name=target_name,output_path=output_path)
     main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
     template_data_dict=res.__dict__
