@@ -1,8 +1,0 @@
-#ifndef _MATCH_TARGET_PARAMS_H
-#define _MATCH_TARGET_PARAMS_H
-
-#define NUM_MEMORY_LEVELS 1
-
-
-
-#endif
