@@ -1,0 +1,68 @@
+{
+  "modules": {
+    "default": {
+      "executors": [
+        "aot"
+      ],
+      "export_datetime": "2024-03-28 00:23:43Z",
+      "external_dependencies": [
+        {
+          "short_name": "tvm_standalone_crt",
+          "url": "./runtime",
+          "url_type": "mlf_path",
+          "version_spec": "0.15.dev0"
+        }
+      ],
+      "memory": {
+        "functions": {
+          "main": [
+            {
+              "constants_size_bytes": 2432,
+              "device": 1,
+              "inputs": {
+                "input_0": {
+                  "dtype": "uint8",
+                  "size": 4096
+                }
+              },
+              "io_size_bytes": 86016,
+              "outputs": {
+                "output": {
+                  "dtype": "uint8",
+                  "size": 65536
+                }
+              },
+              "workspace_size_bytes": 32832
+            }
+          ],
+          "operator_functions": [
+            {
+              "function_name": "tvmgen_default_fused_nn_conv2d",
+              "workspace": [
+                {
+                  "device": 1,
+                  "workspace_size_bytes": 0
+                }
+              ]
+            },
+            {
+              "function_name": "tvmgen_default_fused_multiply_add_right_shift_clip_cast",
+              "workspace": [
+                {
+                  "device": 1,
+                  "workspace_size_bytes": 0
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "model_name": "default",
+      "style": "full-model",
+      "target": [
+        "c -keys=arm_cpu,cpu -device=arm_cpu"
+      ]
+    }
+  },
+  "version": 7
+}

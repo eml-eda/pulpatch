@@ -37,9 +37,9 @@ int main(int argc, char** argv) {
   int32_t status = 0;
   status = tvmgen_default_run(&inputs, &outputs);
   gdb_anchor();
-  printf("\n[");
+  printf("\n{\"output\":[");
   for(int k=0;k<output_size;k++) {printf("%d",(uint8_t)output[k]);if(k!=output_size-1) printf(", ");}
-  printf("]\n");
+  printf("]}\n");
   % for match_input in match_inputs:
   free_wrapper(${match_input["name"]});
   % endfor

@@ -1,3 +1,4 @@
+#!/bin/sh
 cp Makefile.pulprt $1
 cp Makefile.x86 $1/
 cp gdb_demo_x86.sh $1/

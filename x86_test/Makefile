@@ -6,7 +6,6 @@ OPT_LEVEL = 0
 
 # Compiler options
 PKG_COMPILE_OPTS = -Wall -O$(OPT_LEVEL) -std=gnu99 #-fsanitize=address
-PULP_COMPILE_OPTS = -DSDK -m32
 # For debug support - comment these out for reduced binary size
 PKG_COMPILE_OPTS += -g
 
@@ -25,7 +24,6 @@ RANLIB = ranlib
 
 # Compiler options and header includes
 PKG_CFLAGS = ${PKG_COMPILE_OPTS}\
-	     ${PULP_COMPILE_OPTS}\
 	     -I${STANDALONE_CRT_PATH}/include \
 	     -I${STANDALONE_CRT_PATH}/src/runtime/crt/include \
 	     -I${CODEGEN_PATH}/host/include \
@@ -34,7 +32,7 @@ PKG_CFLAGS = ${PKG_COMPILE_OPTS}\
 # These targets don't make self-titled files
 .PHONY: all clean
 
-all: $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o  $(BUILD_DIR)/libcodegen.a $(BUILD_DIR)/demo
+all: $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o  $(BUILD_DIR)/libcodegen.a $(BUILD_DIR)/main
 
 $(BUILD_DIR)/stack_allocator.o: $(STANDALONE_CRT_PATH)/src/runtime/crt/memory/stack_allocator.c
 	mkdir -p $(@D)
@@ -44,24 +42,14 @@ $(BUILD_DIR)/crt_backend_api.o: $(STANDALONE_CRT_PATH)/src/runtime/crt/common/cr
 	mkdir -p $(@D)
 	$(CC) -c $(PKG_CFLAGS) -o $@ $^
 
-$(BUILD_DIR)/malloc_wrapper.o: src/malloc_wrapper.c
-	mkdir -p $(@D)
-	$(CC) -c $(PKG_CFLAGS) -o $@ $^
-
-$(BUILD_DIR)/gdb_anchor.o: src/gdb_anchor.c
-	mkdir -p $(@D)
-	$(CC) -c $(PKG_CFLAGS) -o $@ $^
-
 $(BUILD_DIR)/libcodegen.a: $(CODEGEN_SRCS)
 	cd $(abspath $(BUILD_DIR)/codegen/host/src) && $(CC) -c $(PKG_CFLAGS) $(CODEGEN_SRCS)
 	$(AR) -cr $(abspath $(BUILD_DIR)/libcodegen.a) $(CODEGEN_OBJS)
 	$(RANLIB) $(abspath $(BUILD_DIR)/libcodegen.a)
 
-$(BUILD_DIR)/demo: $(BUILD_DIR)/src/demo.c $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o  $(BUILD_DIR)/malloc_wrapper.o $(BUILD_DIR)/gdb_anchor.o $(BUILD_DIR)/libcodegen.a
+$(BUILD_DIR)/main: $(BUILD_DIR)/src/main.c $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o $(BUILD_DIR)/libcodegen.a
 	mkdir -p $(@D)
 	$(CC) $(PKG_CFLAGS) -o  $@ $^ -lm
 
 clean:
-	rm -f $(CODEGEN_OBJS) $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o $(BUILD_DIR)/libcodegen.a $(BUILD_DIR)/demo $(BUILD_DIR)/malloc_wrapper.o $(BUILD_DIR)/gdb_anchor.o
-
-
+	rm -f $(CODEGEN_OBJS) $(BUILD_DIR)/stack_allocator.o $(BUILD_DIR)/crt_backend_api.o $(BUILD_DIR)/libcodegen.a $(BUILD_DIR)/main

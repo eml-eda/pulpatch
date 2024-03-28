@@ -1,0 +1,9 @@
+def @main(%input_0: Tensor[(1, 16, 16, 16), uint8] /* ty=Tensor[(1, 16, 16, 16), uint8] */) -> Tensor[(16, 16, 16, 16), uint8] {
+  %0 = nn.conv2d(%input_0, meta[relay.Constant][0] /* ty=Tensor[(16, 16, 3, 3), int8] */, padding=[1, 1, 1, 1], kernel_size=[3, 3], out_dtype="int32") /* ty=Tensor[(1, 16, 16, 16), int32] */;
+  %1 = multiply(%0, meta[relay.Constant][1] /* ty=Tensor[(16, 1, 1, 1), int32] */) /* ty=Tensor[(16, 16, 16, 16), int32] */;
+  %2 = add(%1, meta[relay.Constant][2] /* ty=Tensor[(16, 1, 1, 1), int32] */) /* ty=Tensor[(16, 16, 16, 16), int32] */;
+  %3 = right_shift(%2, 4 /* ty=int32 */) /* ty=Tensor[(16, 16, 16, 16), int32] */;
+  %4 = clip(%3, a_min=0f, a_max=255f) /* ty=Tensor[(16, 16, 16, 16), int32] */;
+  cast(%4, dtype="uint8") /* ty=Tensor[(16, 16, 16, 16), uint8] */
+}
+

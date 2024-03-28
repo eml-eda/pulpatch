@@ -1,32 +1,42 @@
 import os
 import argparse
 import pathlib
-import subprocess
 import match
 from mako.template import Template
-
-from match.relay.models import create_model_add_convs, create_model_conv_2d
 import numpy as np
 
-import tvm
+from utils import gap_get_result
 
-def gap_run_driver(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output"):
-    pathlib.Path(output_path).mkdir(parents=True)
-    pathlib.Path(output_path+"/src").mkdir(parents=True)
-    pathlib.Path(output_path+"/include").mkdir(parents=True)
+def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output",verbose:bool=False,compare_x86:bool=True):
+    pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
+    pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
+    pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
     np.random.seed(0)
-    target_name="gap9"
     res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
-                    target_name=target_name,output_path=output_path)
+                    target_name="gap9",output_path=output_path)
     main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
     template_data_dict=res.__dict__
-    template_data_dict["target"]=target_name
+    template_data_dict["target"]="gap9"
     main_code=main_code_template.render(**template_data_dict)
-    with open(output_path+"/src/demo.c","w") as demo_file:
+    with open(pathlib.Path(output_path)/"src/demo.c","w") as demo_file:
         demo_file.write(main_code)
+    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose)
+
+    if verbose:
+        print("Gap result:")
+        print(gap_result["output"])
+
+    if compare_x86:
+
+        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path("./x86_test"))
+        
+        if verbose:
+            print("\n\nx86 result:")
+            print(x86_result)
+        
+        gap_result["correct"]=str(np.ma.allclose(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8),np.asarray(gap_result['output']).astype(np.uint8)))
     
-    subprocess.run(["./run_gap9_match.sh",output_path])
-    
+    return gap_result
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -102,14 +112,21 @@ if __name__=="__main__":
     output_path=args.output_path
 
     if args.convexample:
-        mod,params=create_model_conv_2d()
+        mod,params=match.create_model_conv_2d()
     elif args.addexample:
-        mod,params=create_model_add_convs()
-    gap_run_driver(
+        mod,params=match.create_model_add_convs()
+    compare_x86=False
+    compare_x86=True
+    res_=gap_run_match(
         input_type=input_type,
         relay_mod=mod,
         relay_params=params,
         filename=filename,
         params_filename=params_filename,
         output_path=output_path,
+        compare_x86=compare_x86
     )
+    if compare_x86:
+        print("Result is","" if res_["correct"] else "NOT","correct")
+    else:
+        print("Result is",res_)

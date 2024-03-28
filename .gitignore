@@ -3,3 +3,6 @@ dory_lib/
 gap9_example/
 gap9_sdk/
 gap_out/
+__pycache__
+gap_out*
+tmp
