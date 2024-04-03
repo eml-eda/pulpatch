@@ -7,20 +7,25 @@ import numpy as np
 
 from utils import gap_get_result
 
-def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output",verbose:bool=False,compare_x86:bool=True):
+def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output",verbose:bool=False,compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True):
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
     np.random.seed(0)
+    target=match.target.Gap9()
+    if not accelerator_active:
+        target.disable_exec_module("NE16")
+    if not cluster_active:
+        target.disable_exec_module("cluster")
     res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
-                    target_name="gap9",output_path=output_path)
+                    target=target,output_path=output_path)
     main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
     template_data_dict=res.__dict__
     template_data_dict["target"]="gap9"
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(output_path)/"src/demo.c","w") as demo_file:
         demo_file.write(main_code)
-    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose)
+    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True)
 
     if verbose:
         print("Gap result:")
@@ -28,13 +33,13 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
 
     if compare_x86:
 
-        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path("./x86_test"))
+        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path(output_path+"_x86"),keep_result=True)
         
         if verbose:
             print("\n\nx86 result:")
             print(x86_result)
         
-        gap_result["correct"]=str(np.ma.allclose(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8),np.asarray(gap_result['output']).astype(np.uint8)))
+        gap_result["correct"]=np.ma.allclose(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8),np.asarray(gap_result['output']).astype(np.uint8))
     
     return gap_result
 
@@ -103,6 +108,27 @@ if __name__=="__main__":
         help="Provide the output path"
     )
 
+    parser.add_argument(
+        "--ne16",
+        dest="ne16",
+        action="store_true",
+        help="Deploy considering the accelerator"
+    )
+
+    parser.add_argument(
+        "--cluster",
+        dest="cluster",
+        action="store_true",
+        help="Deploy considering the cluster"
+    )
+
+    parser.add_argument(
+        "-x",
+        "--x86",
+        dest="x86",
+        action="store_true",
+        help="Compare the result with the x86 one"
+    )
     args = parser.parse_args()
     input_type=args.input_type
     mod=None
@@ -110,13 +136,13 @@ if __name__=="__main__":
     filename=args.filename
     params_filename=args.params_filename
     output_path=args.output_path
+    compare_x86=args.x86
 
     if args.convexample:
         mod,params=match.create_model_conv_2d()
     elif args.addexample:
         mod,params=match.create_model_add_convs()
-    compare_x86=False
-    compare_x86=True
+
     res_=gap_run_match(
         input_type=input_type,
         relay_mod=mod,
@@ -124,9 +150,11 @@ if __name__=="__main__":
         filename=filename,
         params_filename=params_filename,
         output_path=output_path,
-        compare_x86=compare_x86
+        compare_x86=compare_x86,
+        cluster_active=args.cluster,
+        accelerator_active=args.ne16
     )
     if compare_x86:
-        print("Result is","" if res_["correct"] else "NOT","correct")
+        print(f'Result is {""if res_["correct"] else "NOT "}correct')
     else:
         print("Result is",res_)
