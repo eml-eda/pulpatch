@@ -29,7 +29,7 @@ def conv_get_test_params():
     """
     import itertools
     weight_bits = [8]
-    act = [False]
+    act = [True]
     strides = [(1, 1)]
     #strides=[(2, 2)]
     kernel_and_padding = [[[3,3],(1,1)]]

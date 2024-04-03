@@ -36,7 +36,7 @@ APP_SRCS += $(MATCH_SOURCES)
 PULP_INC_PATHS += -DSDK
 
 # Note that this value can automatically be changed by python scripts:
-OPT_LEVEL = 3
+OPT_LEVEL = 2
 # Use -DNDEBUG to remove assertions in TVM runtime
 # Use -DPULP for preprocessor in malloc wrapper
 # Need to link in libm for math.h inclusion in softmax operator
