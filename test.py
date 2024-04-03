@@ -29,7 +29,7 @@ def conv_get_test_params():
     """
     import itertools
     weight_bits = [8]
-    act = [False]#, True]
+    act = [False]
     strides = [(1, 1)]
     #strides=[(2, 2)]
     kernel_and_padding = [[[3,3],(1,1)]]
@@ -81,7 +81,7 @@ def get_test_params():
 
 test_params, test_ids = conv_get_test_params()
 @pytest.mark.parametrize("test_params", test_params, ids=test_ids)
-def test_conv2d(test_params, tmp_path:str=""):
+def test_conv2d(test_params, tmp_path):
     weight_bits, act, strides, kernel_and_padding, layout_shapes = test_params
     ones=True
     #ones=False
@@ -106,8 +106,9 @@ def test_conv2d(test_params, tmp_path:str=""):
         bias_values=np.array(bias_values_,dtype=np.int32)
     )
     # Run the test
-    out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=tmp_path,compare_x86=True,accelerator_active=True)
-    print(out)
+    out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
+                      accelerator_active=True,cluster_active=False)
+    assert out["correct"]
     return out
 
 #@pytest.mark.parametrize("test_params", test_params, ids=test_ids)

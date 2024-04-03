@@ -1,7 +1,7 @@
 import subprocess
 import json
 
-def gap_get_result(output_path: str, verbose: bool = False):
+def gap_get_result(output_path: str, verbose: bool = False, keep_result: bool = False):
 
     output={"output":[-1,-1,-1,-1]}
     print("Building ...")
@@ -14,5 +14,6 @@ def gap_get_result(output_path: str, verbose: bool = False):
     with open(output_path/"gap_output.json") as logfile:
         output=json.load(logfile)
 
-    subprocess.run(["rm",output_path/"gap_output.json"])
+    if not keep_result:
+        subprocess.run(["rm",output_path/"gap_output.json"])
     return output

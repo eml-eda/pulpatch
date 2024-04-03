@@ -12,11 +12,20 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
     np.random.seed(0)
+    if compare_x86:
+
+        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path(output_path+"_x86"),keep_result=True)
+        
+        if verbose:
+            print("\n\nx86 result:")
+            print(x86_result)
+            
     target=match.target.Gap9()
     if not accelerator_active:
         target.disable_exec_module("NE16")
     if not cluster_active:
         target.disable_exec_module("cluster")
+
     res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
@@ -33,13 +42,11 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
 
     if compare_x86:
 
-        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path(output_path+"_x86"),keep_result=True)
-        
-        if verbose:
-            print("\n\nx86 result:")
-            print(x86_result)
-        
         gap_result["correct"]=np.ma.allclose(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8),np.asarray(gap_result['output']).astype(np.uint8))
+    
+    else:
+
+        gap_result["correct"]=True
     
     return gap_result
 
