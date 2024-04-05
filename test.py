@@ -41,7 +41,7 @@ def conv_get_test_params():
     # large convs
     layout+=[[(16,16),(64,64)],[(32,32),(64,64)],[(64,64),(64,64)],[(128,128),(64,64)]]
     # last one of the chosen set
-    #layout=[layout[0]]
+    #layout=[layout[0],layout[1]]
     combination = [weight_bits, act, strides, kernel_and_padding,layout]
     test_params = list(itertools.product(*combination))
     test_ids = ["id" + str(i) for i in range(len(test_params))]
@@ -106,10 +106,32 @@ def test_conv2d(test_params, tmp_path):
         bias_values=np.array(bias_values_,dtype=np.int32)
     )
     # Run the test
-    out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
-                      accelerator_active=True,cluster_active=False)
-    assert out["correct"]
-    return out
+
+    ne16_out_single_board=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_ne16_single_board",compare_x86=True,
+                      accelerator_active=True,cluster_active=False,single_core=True,board=True)
+    ne16_out_board=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_ne16_board",compare_x86=True,
+                      accelerator_active=True,cluster_active=False,single_core=False,board=True)
+    cluster_out_board=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_cluster_board",compare_x86=True,
+                      accelerator_active=False,cluster_active=True,board=True)
+    
+
+    ne16_out_single_gvsoc=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_ne16_single_gvsoc",compare_x86=True,
+                      accelerator_active=True,cluster_active=False,single_core=True,board=False)
+    ne16_out_gvsoc=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_ne16_gvsoc",compare_x86=True,
+                      accelerator_active=True,cluster_active=False,single_core=False,board=False)
+    cluster_out_gvsoc=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute())+"_cluster_gvsoc",compare_x86=True,
+                      accelerator_active=False,cluster_active=True,board=False)
+    
+    print(f"NE16 SINGLE CORE CORRECT BOARD? {ne16_out_single_board['correct']}")
+    print(f"NE16 CORRECT BOARD? {ne16_out_board['correct']}")
+    print(f"CLUSTER CORRECT BOARD? {cluster_out_board['correct']}")
+    
+    print(f"NE16 SINGLE CORE CORRECT GVSOC? {ne16_out_single_gvsoc['correct']}")
+    print(f"NE16 CORRECT GVSOC? {ne16_out_gvsoc['correct']}")
+    print(f"CLUSTER CORRECT GVSOC? {cluster_out_gvsoc['correct']}")
+
+    assert ne16_out_single_gvsoc["correct"] and ne16_out_gvsoc["correct"] and cluster_out_gvsoc["correct"] \
+    and ne16_out_single_board["correct"] and ne16_out_board["correct"] and cluster_out_board["correct"]
 
 #@pytest.mark.parametrize("test_params", test_params, ids=test_ids)
 #def test_dw_conv2d(run, test_params, compare_with_x86:bool=False, tmp_path:str=""):

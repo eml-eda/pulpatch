@@ -7,46 +7,59 @@ import numpy as np
 
 from utils import gap_get_result
 
-def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, params_filename=None, output_path="./match_output",verbose:bool=False,compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True):
+def c_friendly_npvalue(arr):
+    # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value
+    if len(arr.shape)>0:
+        # this is actually an array and not a single value
+        arr=arr.reshape([arr.shape[0]]).astype(np.uint8)
+        return f'{{{str(list(arr))[1:len(str(list(arr)))-1]}}}'
+    else:
+        return str(arr)
+            
+def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
+                  params_filename=None, output_path="./match_output",verbose:bool=False,
+                  compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
+                  single_core:bool=False,board:bool=False):
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
     np.random.seed(0)
     if compare_x86:
 
-        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,output_path=pathlib.Path(output_path+"_x86"),keep_result=True)
+        x86_result=match.x86_run_match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,
+                                       filename=filename,params_filename=params_filename,output_path=pathlib.Path(output_path+"_x86"),
+                                       keep_result=True)
         
         if verbose:
             print("\n\nx86 result:")
             print(x86_result)
             
     target=match.target.Gap9()
+    target.disabled_exec_modules=[]
     if not accelerator_active:
         target.disable_exec_module("NE16")
     if not cluster_active:
         target.disable_exec_module("cluster")
-
-    res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,filename=filename,params_filename=params_filename,
+    
+    if single_core:
+        target.exec_modules_dict["NE16"].add_option_to_module("MATCH_NE16_RUN_SINGLE_CORE",1)
+    res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,
+                    filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
     template_data_dict=res.__dict__
     template_data_dict["target"]="gap9"
+    template_data_dict["compare_with_correct"]=compare_x86
+    template_data_dict["log_output"]=False
+    if compare_x86:
+        template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8))
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(output_path)/"src/demo.c","w") as demo_file:
         demo_file.write(main_code)
-    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True)
-
+    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,board=board)
     if verbose:
         print("Gap result:")
-        print(gap_result["output"])
-
-    if compare_x86:
-
-        gap_result["correct"]=np.ma.allclose(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8),np.asarray(gap_result['output']).astype(np.uint8))
-    
-    else:
-
-        gap_result["correct"]=True
+        print(gap_result)
     
     return gap_result
 
@@ -136,6 +149,21 @@ if __name__=="__main__":
         action="store_true",
         help="Compare the result with the x86 one"
     )
+
+    parser.add_argument(
+        "--board",
+        dest="board",
+        action="store_true",
+        help="Deploy on the board(defaults to use gvsoc)"
+    )
+
+    parser.add_argument(
+        "-s",
+        "--single_core",
+        dest="single_core",
+        action="store_true",
+        help="Run NE16 with a single cluster core"
+    )
     args = parser.parse_args()
     input_type=args.input_type
     mod=None
@@ -144,6 +172,8 @@ if __name__=="__main__":
     params_filename=args.params_filename
     output_path=args.output_path
     compare_x86=args.x86
+    single_core=args.single_core
+    board=args.board
 
     if args.convexample:
         mod,params=match.create_model_conv_2d()
@@ -159,7 +189,9 @@ if __name__=="__main__":
         output_path=output_path,
         compare_x86=compare_x86,
         cluster_active=args.cluster,
-        accelerator_active=args.ne16
+        accelerator_active=args.ne16,
+        single_core=single_core,
+        board=board
     )
     if compare_x86:
         print(f'Result is {""if res_["correct"] else "NOT "}correct')

@@ -1,3 +1,3 @@
 #!/bin/sh
 cd $1
-make all
+make all platform=$2
