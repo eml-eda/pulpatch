@@ -9,7 +9,7 @@ int abs(int v) {return v * ((v > 0) - (v < 0)); }
 uint8_t expected_result[${match_output["size"]}]=${expected_results};
 % endif
 int main(int argc, char** argv) {
-  int STOP_AT_FIRST_ERROR=1;
+  int STOP_AT_FIRST_ERROR=0;
   % if target!="x86":
   gap9_cluster_init();
   % endif
@@ -58,9 +58,10 @@ int main(int argc, char** argv) {
   }
   printf("],");
   % endif
-  if(!errors) printf("\"correct\":true");
-  else  printf("\"correct\":false");
-  printf(",\"output\":[");
+  printf("\"num_errors\":%d,",errors);
+  if(!errors) printf("\"correct\":true,");
+  else  printf("\"correct\":false,");
+  printf("\"output\":[");
   % if log_output:
   for(int k=0;k<output_size;k++) {printf("%d",(uint8_t)output[k]);if(k!=output_size-1) printf(", ");}
   % else:
