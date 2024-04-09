@@ -6,3 +6,5 @@ __pycache__
 gap_out*
 x86*
 tmp
+gap_out_*
+match_output

@@ -49,7 +49,7 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
                     filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     
-    main_code_template=Template(filename=os.path.dirname(__file__)+"/demo_template.c")
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/demo_template.c")
     template_data_dict=res.__dict__
     template_data_dict["target"]="gap9"
     template_data_dict["compare_with_correct"]=compare_x86
@@ -127,6 +127,7 @@ if __name__=="__main__":
         "-o",
         "--output_path",
         dest="output_path",
+        default="./match_output",
         type=str,
         help="Provide the output path"
     )
