@@ -42,42 +42,12 @@ def conv_get_test_params():
     layout+=[[(16,16),(64,64)],[(32,32),(64,64)],[(64,64),(64,64)]]#,[(128,128),(64,64)]]
     # last one of the chosen set
     #layout=[layout[0],layout[1]]
-    dev=["ne16_single","cluster"]
+    layout=[[(16,1),(16,16)],[(32,1),(32,32)]]
+    dev=["ne16_single"]
+    dev.append("cluster")
     combination = [weight_bits, act, strides, kernel_and_padding,layout,dev]
     test_params = list(itertools.product(*combination))
     test_ids = ["id" + str(i) + "_" + test_params[i][5] for i in range(len(test_params))]
-    return test_params, test_ids
-
-def get_test_params():
-    """
-    This function is used to generate test parameter combinations for
-    * Conv2D layers
-    * DWConv2D layers
-
-    Why not use pytest.mark.parametrize?
-    --> this generates very long filenames with the tmp_path fixture
-    --> long paths end up in the debug section of the output binary
-    --> pulp RISC-V GDB will crash :(
-
-    This method has some upsides:
-    + Conv2D and DWConv2D use the same test params
-    + GDB doesn't crash :)
-
-    It has a very obvious downside:
-    - Testnames are now very cryptic e.g. "id3, id4" :(
-    """
-    import itertools
-    weight_bits = [8]
-    act = [False, True]
-    strides = [(1, 1)]#, (2, 2)]
-    kernel_and_padding = [[[7, 7], (3, 3)],
-                          [[5, 5], (2, 2)], 
-                          [[3, 3], (1, 1)], 
-                          [[1, 1], (0, 0)],
-                          [[7, 5], (3, 2)]]
-    combination = [weight_bits, act, strides, kernel_and_padding]
-    test_params = list(itertools.product(*combination))
-    test_ids = ["id" + str(i) for i in range(len(test_params))]
     return test_params, test_ids
 
 test_params, test_ids = conv_get_test_params()
@@ -85,7 +55,11 @@ test_params, test_ids = conv_get_test_params()
 def test_conv2d(test_params, tmp_path):
     weight_bits, act, strides, kernel_and_padding, layout_shapes, dev = test_params
     print("Dev::",dev)
+    dev_arr=dev.split("_")
+    dev=dev_arr[0]
     channel_size=layout_shapes[0]
+    if "ne16" in dev and channel_size[1]%16!=0:
+        channel_size=[channel_size[0],channel_size[1]+(16-channel_size[1]%16)]
     inp_size=layout_shapes[1]
     kernel_size = kernel_and_padding[0]
     padding = kernel_and_padding[1]
@@ -106,7 +80,7 @@ def test_conv2d(test_params, tmp_path):
     # Run the test
 
     gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
-                      accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev,board="board" in dev)
+                      accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
 
@@ -116,6 +90,8 @@ def test_conv2d(test_params, tmp_path):
 def test_dw_conv2d(test_params, tmp_path):
     weight_bits, act, strides, kernel_and_padding, layout_shapes, dev = test_params
     print("Dev::",dev)
+    dev_arr=dev.split("_")
+    dev=dev_arr[0]
     channel_size=layout_shapes[0]
     inp_size=layout_shapes[1]
     kernel_size = kernel_and_padding[0]
@@ -136,7 +112,7 @@ def test_dw_conv2d(test_params, tmp_path):
     )
     # Run the test
     gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
-                      accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev,board="board" in dev)
+                      accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
 
