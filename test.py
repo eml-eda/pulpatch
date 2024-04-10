@@ -58,15 +58,20 @@ def test_conv2d(test_params, tmp_path):
     dev_arr=dev.split("_")
     dev=dev_arr[0]
     channel_size=layout_shapes[0]
-    if "ne16" in dev and channel_size[1]%16!=0:
-        channel_size=[channel_size[0],channel_size[1]+(16-channel_size[1]%16)]
+    input_pad=None
     inp_size=layout_shapes[1]
+    input_shape=[1,channel_size[1],inp_size[0],inp_size[1]]
+    if "ne16" in dev and channel_size[1]%16!=0:
+        input_pad=((0,0),(0,16-channel_size[1]%16),(0,0),(0,0))
     kernel_size = kernel_and_padding[0]
     padding = kernel_and_padding[1]
-    kernel_values_= np.ones(shape=(channel_size[0], channel_size[1], kernel_size[1], kernel_size[0]))
+    kernel_values_= np.ones(shape=(channel_size[0], input_shape[1], kernel_size[1], kernel_size[0]))
+    if "ne16" in dev and channel_size[1]%16!=0:
+        kernel_values_=np.pad(kernel_values_,pad_width=((0,0),(0,16-channel_size[1]%16),(0,0),(0,0)))
+        channel_size=tuple([channel_size[0],channel_size[1]+(16-channel_size[1]%16)])
     bias_values_=[1 for i in range(channel_size[0])]
     ir_module, params = match.create_model_conv_2d(
-        input_shape = tuple([1,channel_size[1],inp_size[0],inp_size[1]]),
+        input_shape = tuple(input_shape),
         weights_shape = tuple([channel_size[0], channel_size[1], kernel_size[0],kernel_size[1]]),
         weight_bits = weight_bits,
         act = act,
@@ -75,7 +80,8 @@ def test_conv2d(test_params, tmp_path):
         weights_values = np.array(kernel_values_,dtype=np.int8),
         bias_values = np.array(bias_values_,dtype=np.int32),
         shift_bits = 8,
-        depthwise = False
+        depthwise = False,
+        input_pad=input_pad
     )
     # Run the test
 
