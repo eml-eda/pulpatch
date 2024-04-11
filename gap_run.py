@@ -42,7 +42,7 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
         target.disable_exec_module("cluster")
     
     target.exec_modules_dict["NE16"].module_options=dict()
-    if single_core:
+    if single_core or board:
         target.exec_modules_dict["NE16"].add_option_to_module("MATCH_NE16_RUN_SINGLE_CORE",1)
     
     res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,

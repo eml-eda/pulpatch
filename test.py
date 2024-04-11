@@ -42,7 +42,7 @@ def conv_get_test_params():
     layout+=[[(16,16),(64,64)],[(32,32),(64,64)],[(64,64),(64,64)]]#,[(128,128),(64,64)]]
     # last one of the chosen set
     #layout=[layout[0],layout[1]]
-    layout=[[(16,1),(16,16)],[(32,1),(32,32)]]
+    #layout=[[(16,1),(16,16)],[(32,1),(32,32)]]
     dev=["ne16_single"]
     dev.append("cluster")
     combination = [weight_bits, act, strides, kernel_and_padding,layout,dev]
