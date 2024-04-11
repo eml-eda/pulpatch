@@ -42,11 +42,11 @@ This tool compiles and run a network over GAP9, to use it the user should run th
 - `--cluster` : if the user wants to generate a network using also the cluster
 - `--board` : to run the network over a phisical board instead of GvSoC
 
-[!IMPORTANT]
-The default configuration compiles the network on OPT level 2 with GCC, the user can modify this parameter, if the network doesn't run on the board this may be the primary issue.
+> [!IMPORTANT]
+> The default configuration compiles the network on OPT level 2 with GCC, the user can modify this parameter, if the network doesn't run on the board this may be the primary issue.
 
-[!IMPORTANT]
-MATCH prefers a network generated through PLINIO currently.
+> [!IMPORTANT]
+> MATCH prefers a network generated through PLINIO currently.
 
 # Examples
 
