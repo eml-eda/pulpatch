@@ -5,8 +5,7 @@ SHELL   ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
 # libncurses5 is needed for using pulps gdb
 COPY . /match
-COPY docker-gap/gap9_sdk /gap9_sdk
-COPY docker-gap/dory /dory
+COPY /docker/gap/deps/gap9_sdk /gap9_sdk
 
 # General
 RUN apt-get update && apt-get install -y sudo cmake
