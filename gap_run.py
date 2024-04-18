@@ -40,7 +40,6 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
         target.disable_exec_module("NE16")
     if not cluster_active:
         target.disable_exec_module("cluster")
-    
     target.exec_modules_dict["NE16"].module_options=dict()
     if single_core or board:
         target.exec_modules_dict["NE16"].add_option_to_module("MATCH_NE16_RUN_SINGLE_CORE",1)
@@ -55,7 +54,10 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
     template_data_dict["compare_with_correct"]=compare_x86
     template_data_dict["log_output"]=False
     if compare_x86:
-        template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8))
+        if len(res.match_output["shape"])==4:
+            template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8))
+        else:
+            template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]))
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(output_path)/"src/demo.c","w") as demo_file:
         demo_file.write(main_code)
