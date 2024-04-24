@@ -4,12 +4,13 @@
 #include <tvm_runtime.h>
 #include <malloc_wrapper.h>
 #include <gdb_anchor.h>
+#define MAX_PRINT_ERRORS 128
+#define STOP_AT_FIRST_ERROR 0
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 % if compare_with_correct:
 uint8_t expected_result[${match_output["size"]}]=${expected_results};
 % endif
 int main(int argc, char** argv) {
-  int STOP_AT_FIRST_ERROR=0;
   % if target!="x86":
   gap9_cluster_init();
   % endif
@@ -51,8 +52,10 @@ int main(int argc, char** argv) {
       if(STOP_AT_FIRST_ERROR)
         break;
       else{
-        if(errors>1) printf(",");
-        printf("[%d,%d,%d]",k,expected_result[k],output[k]);
+        if(errors<MAX_PRINT_ERRORS){
+          if(errors>1) printf(",");
+          printf("[%d,%d,%d]",k,expected_result[k],output[k]);
+        }
       }
     }
   }
