@@ -9,3 +9,4 @@ tmp
 gap_out_*
 match_output
 outputs
+tests

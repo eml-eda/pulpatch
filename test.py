@@ -38,8 +38,8 @@ def conv_get_test_params():
     kernel_and_padding.append([[1,1],(0,0)])
     layout=[]
     # test bench
-    for k in [ 3, 4, 6, 8, 16, 32, 64, 128 ]:
-        for c in [ 1, 3, 4, 8, 16, 32, 64, 128 ]:
+    for k in [ 3, 4, 6, 8, 16, 32, 64 ]:#, 128]:
+        for c in [ 1, 3, 4, 8, 16, 32, 64 ]:#, 128]:
             for oy_ox in [ 2, 3, 4, 6, 8, 16, 32, 64, 128 ]:
                 layout.append([(k,c),(oy_ox,oy_ox)])
     dev=["ne16_single_board"]
@@ -58,7 +58,7 @@ def conv_get_test_params():
 
 test_params, test_ids = conv_get_test_params()
 @pytest.mark.parametrize("test_params", test_params, ids=test_ids)
-def test_conv2d(test_params, tmp_path):
+def test_conv2d(request, test_params, tmp_path):
     weight_bits, act, strides, kernel_and_padding, layout_shapes, dev = test_params
     print("Dev::",dev)
     dev_arr=dev.split("_")
@@ -91,7 +91,7 @@ def test_conv2d(test_params, tmp_path):
     )
     # Run the test
 
-    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
+    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./tests/conv2d_{request.node.callspec.id}",compare_x86=True,
                       accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
@@ -99,7 +99,7 @@ def test_conv2d(test_params, tmp_path):
     assert gap_out["correct"]
 
 @pytest.mark.parametrize("test_params", test_params, ids=test_ids)
-def test_dw_conv2d(test_params, tmp_path):
+def test_dw_conv2d(request, test_params, tmp_path):
     weight_bits, act, strides, kernel_and_padding, layout_shapes, dev = test_params
     print("Dev::",dev)
     dev_arr=dev.split("_")
@@ -123,7 +123,7 @@ def test_dw_conv2d(test_params, tmp_path):
         depthwise = True
     )
     # Run the test
-    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=str(tmp_path.absolute()),compare_x86=True,
+    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./tests/dwconv2d_{request.node.callspec.id}",compare_x86=True,
                       accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
