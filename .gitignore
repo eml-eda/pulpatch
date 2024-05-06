@@ -10,3 +10,5 @@ gap_out_*
 match_output
 outputs
 tests
+cluster_tests
+results*

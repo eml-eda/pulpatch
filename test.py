@@ -38,22 +38,23 @@ def conv_get_test_params():
     kernel_and_padding.append([[1,1],(0,0)])
     layout=[]
     # test bench
-    for k in [ 3, 4, 6, 8, 16, 32, 64 ]:#, 128]:
-        for c in [ 1, 3, 4, 8, 16, 32, 64 ]:#, 128]:
+    for k in [ 3, 4, 6, 8, 16, 32, 64, 128]:
+        for c in [ 1, 3, 4, 8, 16, 32, 64, 128]:
             for oy_ox in [ 2, 3, 4, 6, 8, 16, 32, 64, 128 ]:
                 layout.append([(k,c),(oy_ox,oy_ox)])
-    dev=["ne16_single_board"]
+    dev=[]
+    #dev.append(["ne16_single_board"])
     dev.append("cluster_board")
     combination = [weight_bits, act, strides, kernel_and_padding,layout,dev]
     test_params = list(itertools.product(*combination))
     test_ids = ["k_" + str(int(test_params[i][4][0][0])) \
                 + "_c_" + str(int(test_params[i][4][0][1])) \
-                    + "_oy_" + str(int(test_params[i][4][1][0])) \
-                        + "_ox_" + str(int(test_params[i][4][1][1])) \
+                    + "_iy_" + str(int(test_params[i][4][1][0])) \
+                        + "_ix_" + str(int(test_params[i][4][1][1])) \
                             + "_fy_" + str(int(test_params[i][3][0][0])) \
                                 + "_fx_" + str(int(test_params[i][3][0][1])) \
-                                    + f"_s{test_params[i][2][0]}x{test_params[i][2][1]}_" \
-                                        + test_params[i][5] for i in range(len(test_params))]
+                                    + f"_sy_{test_params[i][2][0]}_sx_{test_params[i][2][1]}" \
+                                        for i in range(len(test_params))]
     return test_params, test_ids
 
 test_params, test_ids = conv_get_test_params()
@@ -72,6 +73,8 @@ def test_conv2d(request, test_params, tmp_path):
     kernel_size = kernel_and_padding[0]
     padding = kernel_and_padding[1]
     kernel_values_= np.ones(shape=(channel_size[0], input_shape[1], kernel_size[1], kernel_size[0]))
+    assert np.prod((channel_size[0], input_shape[1], kernel_size[1], kernel_size[0]))+\
+        np.prod(input_shape)+np.prod((channel_size[0],input_shape[2]/strides[0],input_shape[3]/strides[1]))<1300000
     #if "ne16" in dev and channel_size[1]%16!=0:
     #    kernel_values_=np.pad(kernel_values_,pad_width=((0,0),(0,16-channel_size[1]%16),(0,0),(0,0)))
     #    channel_size=tuple([channel_size[0],channel_size[1]+(16-channel_size[1]%16)])
@@ -91,7 +94,7 @@ def test_conv2d(request, test_params, tmp_path):
     )
     # Run the test
 
-    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./tests/conv2d_{request.node.callspec.id}",compare_x86=True,
+    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./{dev}_tests/conv2d_{request.node.callspec.id}",compare_x86=True,
                       accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
@@ -108,8 +111,11 @@ def test_dw_conv2d(request, test_params, tmp_path):
     inp_size=layout_shapes[1]
     kernel_size = kernel_and_padding[0]
     padding = kernel_and_padding[1]
+    input_shape=[1,channel_size[1],inp_size[0],inp_size[1]]
     kernel_values_= np.ones(shape=(channel_size[0], 1, kernel_size[1], kernel_size[0]))
     bias_values_=[1 for i in range(channel_size[0])]
+    assert np.prod((channel_size[0], 1, kernel_size[1], kernel_size[0]))+\
+        np.prod(input_shape)+np.prod((channel_size[0],input_shape[2]/strides[0],input_shape[3]/strides[1]))<1300000
     ir_module, params = match.create_model_conv_2d(
         input_shape = tuple([1,channel_size[1],inp_size[0],inp_size[1]]),
         weights_shape = tuple([channel_size[0], 1, kernel_size[0],kernel_size[1]]),
@@ -123,7 +129,7 @@ def test_dw_conv2d(request, test_params, tmp_path):
         depthwise = True
     )
     # Run the test
-    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./tests/dwconv2d_{request.node.callspec.id}",compare_x86=True,
+    gap_out=gap_run_match(relay_mod=ir_module, relay_params=params, output_path=f"./{dev}_tests/dwconv2d_{request.node.callspec.id}",compare_x86=True,
                       accelerator_active="ne16" in dev,cluster_active="cluster" in dev,single_core="single" in dev_arr,board="board" in dev)
     
     print(f"Gap correct? {gap_out['correct']}")
