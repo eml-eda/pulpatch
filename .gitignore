@@ -10,5 +10,12 @@ gap_out_*
 match_output
 outputs
 tests
-cluster_tests
+*_tests
 results*
+__pycache__
+.pkl_memoize_py3
+build
+__tmp__
+*.egg-info
+dist
+.eggs

@@ -30,7 +30,7 @@ INC_PATHS =  -I${STANDALONE_CRT_PATH}/include \
 			 -I${DORY_INC_PATH}\
 
 # Defining the source files for pulp-runtime
-APP = demo
+APP = main
 APP_SRCS = $(STANDALONE_CRT_SRCS) $(CODEGEN_SRCS) $(DORY_SRCS)
 APP_SRCS += $(MATCH_SOURCES)
 PULP_INC_PATHS += -DSDK

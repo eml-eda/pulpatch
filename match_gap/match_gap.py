@@ -5,7 +5,7 @@ import match
 from mako.template import Template
 import numpy as np
 
-from utils import gap_get_result
+from .utils import gap_get_result
 
 def c_friendly_npvalue(arr):
     # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value
@@ -16,7 +16,7 @@ def c_friendly_npvalue(arr):
     else:
         return str(arr)
             
-def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
+def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
                   params_filename=None, output_path="./match_output",verbose:bool=False,
                   compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
                   single_core:bool=False,board:bool=False):
@@ -48,7 +48,7 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
                     filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     
-    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/demo_template.c")
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/../gap9_lib/ones_input_template.c")
     template_data_dict=res.__dict__
     template_data_dict["target"]="gap9"
     template_data_dict["compare_with_correct"]=compare_x86
@@ -59,12 +59,30 @@ def gap_run_match(input_type="onnx",relay_mod=None, relay_params=None, filename=
         else:
             template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]))
     main_code=main_code_template.render(**template_data_dict)
-    with open(pathlib.Path(output_path)/"src/demo.c","w") as demo_file:
-        demo_file.write(main_code)
+    with open(pathlib.Path(output_path)/"src/main.c","w") as main_file:
+        main_file.write(main_code)
     gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,board=board)
     if verbose:
         print("Gap result:")
         print(gap_result)
+    
+    return gap_result
+
+
+def network_at(match_res,network_path,inputs,golden_out=None,board:bool=False):
+    #main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/../gap9_lib/fixed_input_template.c")
+    main_code_template=Template(filename=str(pathlib.Path("/home/moyne/phd/compilers/match/docker/gap/gap9_lib/fixed_input_template.c")))
+    template_data_dict=match_res.__dict__
+    template_data_dict["target"]="gap9"
+    template_data_dict["compare_with_correct"]=golden_out is not None
+    template_data_dict["log_output"]=True
+    template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.asarray(input_["values"])),**input_} for input_ in inputs]
+
+    main_code=main_code_template.render(**template_data_dict)
+    with open(pathlib.Path(network_path)/"src/main.c","w") as main_file:
+        main_file.write(main_code)
+
+    gap_result=gap_get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board)
     
     return gap_result
 
