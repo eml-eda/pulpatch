@@ -70,8 +70,7 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
 
 
 def network_at(match_res,network_path,inputs,golden_out=None,board:bool=False):
-    #main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/../gap9_lib/fixed_input_template.c")
-    main_code_template=Template(filename=str(pathlib.Path("/home/moyne/phd/compilers/match/docker/gap/gap9_lib/fixed_input_template.c")))
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/../gap9_lib/fixed_input_template.c")
     template_data_dict=match_res.__dict__
     template_data_dict["target"]="gap9"
     template_data_dict["compare_with_correct"]=golden_out is not None
