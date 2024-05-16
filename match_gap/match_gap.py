@@ -19,7 +19,8 @@ def c_friendly_npvalue(arr):
 def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
                   params_filename=None, output_path="./match_output",verbose:bool=False,
                   compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
-                  single_core:bool=False,board:bool=False):
+                  single_core:bool=False,board:bool=False,
+                  gap_sdk_path="/gap_sdk"):
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
@@ -61,7 +62,7 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(output_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
-    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,board=board)
+    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,board=board,gap_sdk_path=gap_sdk_path)
     if verbose:
         print("Gap result:")
         print(gap_result)
@@ -69,21 +70,27 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
     return gap_result
 
 
-def network_at(match_res,network_path,inputs,golden_out=None,board:bool=False):
-    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/gap9_lib/fixed_input_template.c")
+def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=False,run:bool=True,gap_sdk_path="/gap_sdk"):
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+f"/gap9_lib/{'fixed' if inputs is not None else 'uart'}_input_template.c")
     template_data_dict=match_res.__dict__
     template_data_dict["target"]="gap9"
     template_data_dict["compare_with_correct"]=golden_out is not None
     template_data_dict["log_output"]=True
-    template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.asarray(input_["values"])),**input_} for input_ in inputs]
+    if inputs is not None:
+        template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.asarray(input_["values"])),**input_} for input_ in inputs]
 
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(network_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
 
-    gap_result=gap_get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board)
+    gap_result=gap_get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board,gap_sdk_path=gap_sdk_path,run=run,clean=False)
     
     return gap_result
+
+def uart_network(match_res,network_path,gap_sdk_path="/gap_sdk"):
+    network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=True,run=False,gap_sdk_path=gap_sdk_path)
+
+    gap_run_on_background(pathlib.Path(network_path),gap_sdk_path=gap_sdk_path)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()

@@ -65,9 +65,6 @@ int main(int argc, char** argv) {
   % endif
   printf("]");
   printf("}\n");
-  % for match_input in match_inputs:
-  free_wrapper(${match_input["name"]});
-  % endfor
   free_wrapper(output);
   % if target!="x86":
   gap9_cluster_close();
