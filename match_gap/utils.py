@@ -39,6 +39,6 @@ def gap_get_result(output_path: str, verbose: bool = False, keep_result: bool = 
     return output
 
 def gap_run_on_background(output_path: str, gap_sdk_path="/gap_sdk", board: bool=False):
-    output1 = subprocess.Popen([str(pathlib.Path(os.path.dirname(__file__)))+"/scripts/run_bg_gap9_match.sh",
-                                output_path,"board" if board else "gvsoc",
-                                gap_sdk_path])
+    subprocess.Popen([str(pathlib.Path(os.path.dirname(__file__)))+"/scripts/run_bg_gap9_match.sh",
+                            output_path,"board" if board else "gvsoc",
+                            gap_sdk_path])

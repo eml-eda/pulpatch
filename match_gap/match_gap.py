@@ -5,7 +5,7 @@ import match
 from mako.template import Template
 import numpy as np
 
-from .utils import gap_get_result
+from .utils import gap_get_result,gap_run_on_background
 
 def c_friendly_npvalue(arr):
     # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value
@@ -87,10 +87,10 @@ def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=Fal
     
     return gap_result
 
-def uart_network(match_res,network_path,gap_sdk_path="/gap_sdk"):
-    network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=True,run=False,gap_sdk_path=gap_sdk_path)
+def uart_network(match_res,network_path,gap_sdk_path="/gap_sdk",board:bool=False):
+    network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=board,run=False,gap_sdk_path=gap_sdk_path)
 
-    gap_run_on_background(pathlib.Path(network_path),gap_sdk_path=gap_sdk_path)
+    gap_run_on_background(pathlib.Path(network_path),gap_sdk_path=gap_sdk_path,board=board)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()

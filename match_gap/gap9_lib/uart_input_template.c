@@ -6,8 +6,10 @@
 #include <gdb_anchor.h>
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 
-uint32_t uart_status = 0;
+GAP_L2_DATA int32_t uart_status;
+GAP_L2_DATA int32_t inference_status;
 struct pi_device uart;
+//#define DEBUG_UART 1
 
 int main(int argc, char** argv) {
   % if target!="x86":
@@ -32,13 +34,13 @@ int main(int argc, char** argv) {
     % endfor
   };
 
-  pi_pad_function_set(60,0);
-  pi_pad_function_set(61,0);
-  pi_pad_function_set(62,0);
-  pi_pad_function_set(63,0);
+  // Enable MUX_GROUP_UART1
+    pi_pad_function_set(PI_PAD_065, PI_PAD_FUNC0);
+    pi_pad_function_set(PI_PAD_066, PI_PAD_FUNC0);
 
-  pi_timer_ioctl(NULL, PI_TIMER_IOCTL_SYS_TIMER_SRC_SET, (void *) PI_TIMER_SRC_FLL);
-  pi_fll_ioctl(PI_FREQ_DOMAIN_ALL, PI_FLL_IOCTL_FULL_DCO_CLOSE_LOOP_SET, 0);
+    // Pad 44 and 45 are dedicated to i2c2 by default. We need to configure the MUX_GROUP_UART1 to dedicate them to UART1 (FTDI).
+    pi_pad_mux_group_set(PI_PAD_044, PI_PAD_MUX_GROUP_UART1_RX);
+    pi_pad_mux_group_set(PI_PAD_045, PI_PAD_MUX_GROUP_UART1_TX);
 
   struct pi_uart_conf conf;
   /* Init & open uart. */
@@ -67,13 +69,13 @@ int main(int argc, char** argv) {
   conf.uart_id = 1;
   conf.enable_tx = 1;
   conf.enable_rx = 1;
-  conf.baudrate_bps = 3000000;
-  conf.word_size = 8;
+  conf.baudrate_bps = 115200;
+  conf.word_size = PI_UART_WORD_SIZE_8_BITS;
   conf.parity_mode = 0;
   conf.use_fast_clk = 0;              // Enable the fast clk for uart
   conf.use_ctrl_flow = 0;             // Enable the HW Flow Control
   
-  conf.stop_bit_count = 0;
+  conf.stop_bit_count = PI_UART_STOP_BITS_TWO;
 
   pi_open_from_conf(&uart, &conf);
   if (pi_uart_open(&uart))
@@ -82,28 +84,47 @@ int main(int argc, char** argv) {
       pmsis_exit(-1);
   }
 
+  uart_status=0;
+  pi_uart_write(&uart,&uart_status,sizeof(int32_t));
+  printf("Ready...\n");
   while(1)
   {
       // Get the size of the buffer
-      pi_uart_read(&uart, &uart_status, sizeof(uint32_t));
-
-      // If the sender sends -1 we finish
-      if(uart_status != -1)
+      pi_uart_read(&uart, &uart_status, sizeof(int32_t));
+      printf("Received status %d...\n",uart_status);
+      // If the sender sends anything that is not 0 we finish
+      if(!uart_status)
       {
         % for match_input in match_inputs:
         pi_uart_read(&uart, ${match_input["name"]}, ${match_input["name"]}_size);
         % endfor
-        uint32_t inference_status;
+        #ifdef DEBUG_UART
+        printf("Received input ${match_input['name']}...\n");
+        for(int i=0;i<${match_input["name"]}_size;i++) printf("%d, ",match_input_0[i]);
+        printf("\n");
+        #endif 
+        printf("Running inference...\n");
         start_g_perf_counter();
         inference_status = tvmgen_default_run(&inputs, &outputs);
         stop_g_perf_counter();
         int32_t cycles=get_acc_perf_counter();
-        int errors=0;
         /* Write on uart the size of the result and then the result. */
-        pi_uart_write(&uart, &inference_status, sizeof(uint32_t));
-        if(inference_status!=0) pi_uart_write(&uart, output, output_size*sizeof(uint8_t));
+        printf("Inference finished with status %d...\n",inference_status);
+        /* Write on uart the size of the result and then the result. */
+        pi_uart_write(&uart, &inference_status, sizeof(int32_t));
+        if(!inference_status){
+          #ifdef DEBUG_UART
+          printf("Output...\n");
+          for(int i=0;i<output_size;i++) printf("%d, ",output[i]);
+          printf("\n");
+          #endif  
+          pi_uart_write(&uart, output, output_size*sizeof(uint8_t));
+        }
       }
-
+      else{
+        printf("Received finish command...\n");
+        break;
+      }
   }
 
   pi_uart_close(&uart);

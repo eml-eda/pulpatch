@@ -5,7 +5,7 @@ echo "The path for the match_gap repository scripts are in" $3
 echo "Network is at" $1
 echo "Building the network on" $2
 cd $4
-source sourceme.sh 1
+source sourceme.sh 1 <<< 1
 cd $3
 pwd
 ./scripts/build_gap9_match.sh $1 $2 $3
