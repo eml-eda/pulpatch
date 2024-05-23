@@ -210,7 +210,7 @@ if __name__=="__main__":
     elif args.addexample:
         mod,params=match.create_model_add_convs()
 
-    res_=gap_run_match(
+    res_=run_with(
         input_type=input_type,
         relay_mod=mod,
         relay_params=params,
