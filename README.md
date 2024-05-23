@@ -27,6 +27,9 @@ $ docker build . -f docker/gap/Dockerfile -t gap-match
 If the user has the Gap9 SDK already installed in a Ubuntu machine, the user shall follow these steps
 ```
 $ git clone --recursive https://github.com/eml-eda/match_gap9.git
+$ cd match_gap9
+$ python3 setup.py install --user
+$ cd ..
 $ git clone --recursive https://github.com/eml-eda/match.git
 $ cd match
 $ make all
@@ -54,12 +57,12 @@ Thanks to MATCH there are available already a few network examples, for example 
 
 Therefore to target the cluster for this small network the user can run the following script:
 ```
-$ python3 gap_run.py -c -o output_path --cluster
+$ python3 match_gap/match_gap.py -c -o output_path --cluster
 ```
 
 There also bigger network available already, for example a small mobilenet
 ```
-$ python3 gap_run.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx
+$ python3 match_gap/match_gap.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx
 ```
 
 There are also a few tests of 2d convolutions and depthwise convolutions that the user can run over both NE16 and the cluster separetely
