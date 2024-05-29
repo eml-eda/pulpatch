@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
           for(int i=0;i<output_size;i++) printf("%d, ",output[i]);
           printf("\n");
           #endif  
-          pi_uart_write(&uart, output, (output_size+(4-(output_size%4)))* ${match_output["prec"]} *sizeof(uint8_t));
+          pi_uart_write(&uart, output, (output_size* ${match_output["prec"]} *sizeof(uint8_t)) + 4);
         }
       }
       else{
