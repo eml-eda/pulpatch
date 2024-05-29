@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   % endif
 
   uint32_t output_size = ${match_output["size"]};
-  uint8_t *output = (uint8_t*)malloc_wrapper(output_size * sizeof(uint8_t));
+  ${match_output["type"]}_t *output = (${match_output["type"]}_t*)malloc_wrapper(output_size * sizeof(${match_output["type"]}_t));
   struct tvmgen_default_outputs outputs = { .output = output, };
 
   struct tvmgen_default_inputs inputs = {
@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   else  printf("\"correct\":false,");
   printf("\"output\":[");
   % if log_output:
-  for(int k=0;k<output_size;k++) {printf("%d",(uint8_t)output[k]);if(k!=output_size-1) printf(", ");}
+  for(int k=0;k<output_size;k++) {printf("%d",output[k]);if(k!=output_size-1) printf(", ");}
   % else:
   //for(int k=0;k<output_size;k++) {printf("%d",(uint8_t)output[k]);if(k!=output_size-1) printf(", ");}
   % endif

@@ -17,13 +17,13 @@ int main(int argc, char** argv) {
   % endif
 
   uint32_t output_size = ${match_output["size"]};
-  uint8_t *output = (uint8_t*)malloc_wrapper(output_size * sizeof(uint8_t));
+  uint8_t *output = (uint8_t*)malloc_wrapper(output_size * ${match_output["prec"]} * sizeof(uint8_t));
   
   struct tvmgen_default_outputs outputs = { .output = output, };
 
   % for match_input in match_inputs:
   uint32_t ${match_input["name"]}_size = ${match_input["size"]};
-  uint8_t *${match_input["name"]} = (uint8_t*)malloc_wrapper(${match_input["name"]}_size * sizeof(uint8_t));
+  uint8_t *${match_input["name"]} = (uint8_t*)malloc_wrapper(${match_input["name"]}_size * ${match_input["prec"]} * sizeof(uint8_t));
   % endfor
   struct tvmgen_default_inputs inputs = {
     % for idx,match_input in enumerate(match_inputs):
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
       if(!uart_status)
       {
         % for match_input in match_inputs:
-        pi_uart_read(&uart, ${match_input["name"]}, ${match_input["name"]}_size);
+        pi_uart_read(&uart, ${match_input["name"]}, ${match_input["name"]}_size * ${match_input["prec"]});
         % endfor
         #ifdef DEBUG_UART
         printf("Received input ${match_input['name']}...\n");
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
           for(int i=0;i<output_size;i++) printf("%d, ",output[i]);
           printf("\n");
           #endif  
-          pi_uart_write(&uart, output, (output_size+(4-(output_size%4)))*sizeof(uint8_t));
+          pi_uart_write(&uart, output, (output_size+(4-(output_size%4)))* ${match_output["prec"]} *sizeof(uint8_t));
         }
       }
       else{
