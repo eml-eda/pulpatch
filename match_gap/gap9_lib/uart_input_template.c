@@ -104,10 +104,10 @@ int main(int argc, char** argv) {
         printf("\n");
         #endif 
         printf("Running inference...\n");
-        start_g_perf_counter();
+        //start_g_perf_counter();
         inference_status = tvmgen_default_run(&inputs, &outputs);
-        stop_g_perf_counter();
-        int32_t cycles=get_acc_perf_counter();
+        //stop_g_perf_counter();
+        //int32_t cycles=get_acc_perf_counter();
         /* Write on uart the size of the result and then the result. */
         printf("Inference finished with status %d...\n",inference_status);
         /* Write on uart the size of the result and then the result. */
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
           for(int i=0;i<output_size;i++) printf("%d, ",output[i]);
           printf("\n");
           #endif  
-          pi_uart_write(&uart, output, output_size*sizeof(uint8_t));
+          pi_uart_write(&uart, output, (output_size+(4-(output_size%4)))*sizeof(uint8_t));
         }
       }
       else{
