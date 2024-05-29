@@ -5,7 +5,7 @@ import match
 from mako.template import Template
 import numpy as np
 
-from .utils import gap_get_result,gap_run_on_background
+from utils import gap_get_result,gap_run_on_background
 
 def c_friendly_npvalue(arr):
     # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value
@@ -20,7 +20,8 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
                   params_filename=None, output_path="./match_output",verbose:bool=False,
                   compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
                   single_core:bool=False,board:bool=False,
-                  gap_sdk_path="/gap_sdk"):
+                  gap_sdk_path="/home/gap_sdk_private/"):
+    
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/include").mkdir(parents=True,exist_ok=True)
@@ -121,7 +122,7 @@ if __name__=="__main__":
         "--filename",
         dest="filename",
         type=str,
-        help="Provide the filename of the module to compile.",
+        help="Provide the absolute filename of the module to compile.",
     )
 
     parser.add_argument(
@@ -155,7 +156,7 @@ if __name__=="__main__":
         dest="output_path",
         default="./match_output",
         type=str,
-        help="Provide the output path"
+        help="Provide the absolute output path"
     )
 
     parser.add_argument(
@@ -194,6 +195,16 @@ if __name__=="__main__":
         action="store_true",
         help="Run NE16 with a single cluster core"
     )
+
+    parser.add_argument(
+        "-g",
+        "--gap_sdk",
+        dest="gap_sdk_path",
+        default="/home/gap_sdk_private/",
+        type=str,
+        help="Provide the absolute path to the GAP SDK, defaults to /home/gap_sdk/private"
+    )
+
     args = parser.parse_args()
     input_type=args.input_type
     mod=None
@@ -204,6 +215,7 @@ if __name__=="__main__":
     compare_x86=args.x86
     single_core=args.single_core
     board=args.board
+    gap_sdk_path=args.gap_sdk_path
 
     if args.convexample:
         mod,params=match.create_model_conv_2d()
@@ -221,8 +233,10 @@ if __name__=="__main__":
         cluster_active=args.cluster,
         accelerator_active=args.ne16,
         single_core=single_core,
-        board=board
+        board=board,
+        gap_sdk_path=gap_sdk_path,
     )
+
     if compare_x86:
         print(f'Result is {""if res_["correct"] else "NOT "}correct')
     else:

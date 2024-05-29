@@ -37,6 +37,9 @@ $ make all
 
 ## Usage
 
+> [!IMPORTANT]
+> Currently this tool expects all the paths to be **absolute**
+
 This tool compiles and run a network over GAP9, to use it the user should run the gap_run.py script, which expects some parameters:
 - `-o path` : output path of the network
 - `-f input_file` : path to the file defining the network in ONNX (or relay as well; in that case the user shall also use the -p path argument to define the file used to store the weights and other parameters of the TVM Relay IR network)
@@ -44,9 +47,10 @@ This tool compiles and run a network over GAP9, to use it the user should run th
 - `--ne16` : if the user wants to generate a network using also the NE16 accelerator
 - `--cluster` : if the user wants to generate a network using also the cluster
 - `--board` : to run the network over a phisical board instead of GvSoC
+- `-g` : we need to provide the absolute path to the GAP_SDK(defaults to /home/gap_sdk/private)
 
 > [!IMPORTANT]
-> The default configuration compiles the network on OPT level 2 with GCC, the user can modify this parameter, if the network doesn't run on the board this may be the primary issue.
+> The default configuration compiles the network on OPT level 3 with GCC, the user can modify this parameter, if the network doesn't run on the board this may be the primary issue.
 
 > [!IMPORTANT]
 > MATCH prefers a network generated through PLINIO currently.
@@ -57,12 +61,12 @@ Thanks to MATCH there are available already a few network examples, for example 
 
 Therefore to target the cluster for this small network the user can run the following script:
 ```
-$ python3 match_gap/match_gap.py -c -o output_path --cluster
+$ python3 match_gap/match_gap.py -c -o output_path --cluster -g /home/gap_sdk_private
 ```
 
 There also bigger network available already, for example a small mobilenet
 ```
-$ python3 match_gap/match_gap.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx
+$ python3 match_gap/match_gap.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx -g /home/gap_sdk_private
 ```
 
 There are also a few tests of 2d convolutions and depthwise convolutions that the user can run over both NE16 and the cluster separetely
