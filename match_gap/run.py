@@ -5,7 +5,7 @@ import match
 from mako.template import Template
 import numpy as np
 
-from utils import gap_get_result,gap_run_on_background
+from match_gap.utils import gap_get_result,gap_run_on_background
 
 def c_friendly_npvalue(arr):
     # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value

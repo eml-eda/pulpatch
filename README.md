@@ -61,12 +61,12 @@ Thanks to MATCH there are available already a few network examples, for example 
 
 Therefore to target the cluster for this small network the user can run the following script:
 ```
-$ python3 match_gap/match_gap.py -c -o output_path --cluster -g /home/gap_sdk_private
+$ python3 match_gap/run.py -c -o output_path --cluster -g /home/gap_sdk_private
 ```
 
 There also bigger network available already, for example a small mobilenet
 ```
-$ python3 match_gap/match_gap.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx -g /home/gap_sdk_private
+$ python3 match_gap/run.py -o output_path --cluster -i onnx -f /path/to/match/examples/small_mobilenet_V1.onnx -g /home/gap_sdk_private
 ```
 
 There are also a few tests of 2d convolutions and depthwise convolutions that the user can run over both NE16 and the cluster separetely
