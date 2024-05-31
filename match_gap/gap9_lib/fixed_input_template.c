@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   % if compare_with_correct:
   printf("\"errors\":[");
   for(int k=0;k<output_size;k++){
-    if(expected_result[k]!=((uint8_t)output[k])){
+    if(expected_result[k]!=output[k]){
       errors++;
       if(STOP_AT_FIRST_ERROR)
         break;
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   % if log_output:
   for(int k=0;k<output_size;k++) {printf("%d",output[k]);if(k!=output_size-1) printf(", ");}
   % else:
-  //for(int k=0;k<output_size;k++) {printf("%d",(uint8_t)output[k]);if(k!=output_size-1) printf(", ");}
+  //for(int k=0;k<output_size;k++) {printf("%d",output[k]);if(k!=output_size-1) printf(", ");}
   % endif
   printf("]");
   printf("}\n");

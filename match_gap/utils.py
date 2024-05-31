@@ -6,7 +6,7 @@ import os
 
 def gap_get_result(output_path: str, verbose: bool = False, keep_result: bool = False,
                    board: bool = False, run: bool=True, timeout: int = 300,
-                   clean: bool=True, gap_sdk_path="/gap_sdk"):
+                   clean: bool=False, gap_sdk_path="/gap_sdk"):
 
     output={"output":[-1,-1,-1,-1],"correct":False,"run":run}
     print("Building ...")

@@ -50,11 +50,13 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
                     filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     
-    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/gap9_lib/ones_input_template.c")
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/gap9_lib/fixed_input_template.c")
     template_data_dict=res.__dict__
     template_data_dict["target"]="gap9"
     template_data_dict["compare_with_correct"]=compare_x86
-    template_data_dict["log_output"]=False
+    template_data_dict["log_output"]=verbose
+    template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.ones(input_["shape"],dtype=np.uint8).flatten()),**input_} for input_ in res.match_inputs]
+
     if compare_x86:
         if len(res.match_output["shape"])==4:
             template_data_dict["expected_results"]=c_friendly_npvalue(np.asarray(x86_result["output"]).reshape(int(res.match_output["shape"][1]),int(res.match_output["shape"][2]),int(res.match_output["shape"][3])).transpose(1,2,0).flatten().astype(np.uint8))
@@ -98,15 +100,6 @@ if __name__=="__main__":
 
     parser.add_argument(
         "-v", "--verbose", action="count", default=0, help="increase log verbosity"
-    )
-
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_const",
-        dest="verbose",
-        const=2,
-        help="log debug messages (same as -vv)",
     )
 
     parser.add_argument(
@@ -235,6 +228,7 @@ if __name__=="__main__":
         single_core=single_core,
         board=board,
         gap_sdk_path=gap_sdk_path,
+        verbose=args.verbose>0,
     )
 
     if compare_x86:
