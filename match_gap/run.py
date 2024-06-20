@@ -19,8 +19,8 @@ def c_friendly_npvalue(arr):
 def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
                   params_filename=None, output_path="./match_output",verbose:bool=False,
                   compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
-                  single_core:bool=False,board:bool=False,
-                  gap_sdk_path="/home/gap_sdk_private/"):
+                  board:bool=False,gap_sdk_path="/home/gap_sdk_private/",
+                  target_name:str="gap9"):
     
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
     pathlib.Path(output_path+"/src").mkdir(parents=True,exist_ok=True)
@@ -36,15 +36,18 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
             print("\n\nx86 result:")
             print(x86_result)
             
-    target=match.target.Gap9()
-    target.disabled_exec_modules=[]
-    if not accelerator_active:
-        target.disable_exec_module("NE16")
-    if not cluster_active:
-        target.disable_exec_module("cluster")
-    target.exec_modules_dict["NE16"].module_options=dict()
-    if single_core or board:
-        target.exec_modules_dict["NE16"].add_option_to_module("MATCH_NE16_RUN_SINGLE_CORE",1)
+    target=None
+    if target_name=="gap9":
+        target=match.target.Gap9()
+        target.disabled_exec_modules=[]
+        if not accelerator_active:
+            target.disable_exec_module("NE16")
+        if not cluster_active:
+            target.disable_exec_module("cluster")
+        target.exec_modules_dict["NE16"].module_options=dict()
+    else:
+        target=match.target.PulpOpen()
+        target.disabled_exec_modules=[]
     
     res=match.match(input_type=input_type,relay_mod=relay_mod,relay_params=relay_params,
                     filename=filename,params_filename=params_filename,
@@ -182,20 +185,21 @@ if __name__=="__main__":
     )
 
     parser.add_argument(
-        "-s",
-        "--single_core",
-        dest="single_core",
-        action="store_true",
-        help="Run NE16 with a single cluster core"
-    )
-
-    parser.add_argument(
         "-g",
         "--gap_sdk",
         dest="gap_sdk_path",
         default="/home/gap_sdk_private/",
         type=str,
         help="Provide the absolute path to the GAP SDK, defaults to /home/gap_sdk/private"
+    )
+
+    parser.add_argument(
+        "-t",
+        "--target",
+        dest="target",
+        default="gap9",
+        type=str,
+        help="Provide the pulp target, defaults to gap9"
     )
 
     args = parser.parse_args()
@@ -206,9 +210,9 @@ if __name__=="__main__":
     params_filename=args.params_filename
     output_path=args.output_path
     compare_x86=args.x86
-    single_core=args.single_core
     board=args.board
     gap_sdk_path=args.gap_sdk_path
+    target=args.target
 
     if args.convexample:
         mod,params=match.create_model_conv_2d()
@@ -225,10 +229,10 @@ if __name__=="__main__":
         compare_x86=compare_x86,
         cluster_active=args.cluster,
         accelerator_active=args.ne16,
-        single_core=single_core,
         board=board,
         gap_sdk_path=gap_sdk_path,
         verbose=args.verbose>0,
+        target_name=target
     )
 
     if compare_x86:

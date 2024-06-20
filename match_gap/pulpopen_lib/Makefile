@@ -15,7 +15,6 @@ CODEGEN_SRCS = $(wildcard $(abspath $(BUILD_DIR))/codegen/host/src/*.c)
 CODEGEN_OBJS = $(subst .c,.o,$(CODEGEN_SRCS))
 
 
-
 #def zigzag
 
 MATCH_SOURCES = $(wildcard src/*.c)
@@ -36,11 +35,11 @@ OPT_LEVEL = 3
 # Use -DNDEBUG to remove assertions in TVM runtime
 # Use -DPULP for preprocessor in malloc wrapper
 # Need to link in libm for math.h inclusion in softmax operator
-APP_CFLAGS += -DNUM_CORES=$(CORE) -g $(INC_PATHS) -DNDEBUG -O$(OPT_LEVEL) -DPULP 
+APP_CFLAGS += -DNUM_CORES=$(CORE) -g $(INC_PATHS) -DNDEBUG -O$(OPT_LEVEL) -DPULP -Wno-error=format -w
 # GAP9 fixes, the first because abort() is not in stdlib. The second to avoid a crt_backend_api.c error
-APP_CFLAGS += -Dabort\(\)=exit\(\-\1\)  -Wno-error=format -w
+#APP_CFLAGS += -Dabort\(\)=exit\(\-\1\)  -Wno-error=format -w
 #-fno-indirect-inlining -flto -w
-APP_LDFLAGS += -lm 
+APP_LDFLAGS += -lm
 #-Wl,--print-memory-usage -flto
 
 
