@@ -8,11 +8,11 @@
 #define STOP_AT_FIRST_ERROR 0
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 % for input_ in inputs:
-uint8_t ${input_["name"]}[${input_["c_arr_size"]}]=${input_["c_arr_values"]};
+uint8_t PI_L2 ${input_["name"]}[${input_["c_arr_size"]}]=${input_["c_arr_values"]};
 % endfor
 int main(int argc, char** argv) {
   % if target!="x86":
-  gap9_cluster_init();
+  gap_cluster_init();
   % endif
 
   uint32_t output_size = ${match_output["size"]};
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   printf("}\n");
   free_wrapper(output);
   % if target!="x86":
-  gap9_cluster_close();
+  gap_cluster_close();
   % endif
   if(status != 0){
     abort();

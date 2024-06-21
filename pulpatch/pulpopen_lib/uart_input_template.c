@@ -6,14 +6,14 @@
 #include <gdb_anchor.h>
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 
-GAP_L2_DATA int32_t uart_status;
-GAP_L2_DATA int32_t inference_status;
+PI_L2 int32_t uart_status;
+PI_L2 int32_t inference_status;
 struct pi_device uart;
 //#define DEBUG_UART 1
 
 int main(int argc, char** argv) {
   % if target!="x86":
-  gap9_cluster_init();
+  gap_cluster_init();
   % endif
 
   uint32_t output_size = ${match_output["size"]};
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
   % endfor
   free_wrapper(output);
   % if target!="x86":
-  gap9_cluster_close();
+  gap_cluster_close();
   % endif
   return 0;
 }

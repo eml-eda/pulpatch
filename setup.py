@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name='match_gap',
+    name='pulpatch',
     version='0.0.1',
     packages=setuptools.find_packages(),
     install_requires=['setuptools'],

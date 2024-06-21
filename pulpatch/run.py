@@ -5,7 +5,7 @@ import match
 from mako.template import Template
 import numpy as np
 
-from match_gap.utils import gap_get_result,gap_run_on_background
+from pulpatch.utils import get_result,run_on_background
 
 def c_friendly_npvalue(arr):
     # params: arr is expected to be a numpy version of the value, it should be an array but it may be also just a single value
@@ -19,7 +19,7 @@ def c_friendly_npvalue(arr):
 def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None, 
                   params_filename=None, output_path="./match_output",verbose:bool=False,
                   compare_x86:bool=True,cluster_active:bool=True,accelerator_active:bool=True,
-                  board:bool=False,gap_sdk_path="/home/gap_sdk_private/",
+                  board:bool=False,sdk_path="/home/gap_sdk_private/",
                   target_name:str="gap9"):
     
     pathlib.Path(output_path).mkdir(parents=True,exist_ok=True)
@@ -53,9 +53,9 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
                     filename=filename,params_filename=params_filename,
                     target=target,output_path=output_path)
     
-    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+"/gap9_lib/fixed_input_template.c")
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+("/gap9_lib" if target_name=="gap9" else "/pulpopen_lib")+"/fixed_input_template.c")
     template_data_dict=res.__dict__
-    template_data_dict["target"]="gap9"
+    template_data_dict["target"]=target_name
     template_data_dict["compare_with_correct"]=compare_x86
     template_data_dict["log_output"]=verbose
     template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.ones(input_["shape"],dtype=np.uint8).flatten()),**input_} for input_ in res.match_inputs]
@@ -68,18 +68,18 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
     main_code=main_code_template.render(**template_data_dict)
     with open(pathlib.Path(output_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
-    gap_result=gap_get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,board=board,gap_sdk_path=gap_sdk_path)
+    result=get_result(pathlib.Path(output_path),verbose=verbose,keep_result=True,target=target_name,board=board,sdk_path=sdk_path)
     if verbose:
-        print("Gap result:")
-        print(gap_result)
+        print("Result:")
+        print(result)
     
-    return gap_result
+    return result
 
 
-def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=False,run:bool=True,gap_sdk_path="/gap_sdk"):
-    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+f"/gap9_lib/{'fixed' if inputs is not None else 'uart'}_input_template.c")
+def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=False,run:bool=True,target_name:str="gap9",sdk_path="/gap_sdk"):
+    main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+f"{'/gap9_lib' if target_name=='gap9' else '/pulpopen_lib'}/{'fixed' if inputs is not None else 'uart'}_input_template.c")
     template_data_dict=match_res.__dict__
-    template_data_dict["target"]="gap9"
+    template_data_dict["target"]=target_name
     template_data_dict["compare_with_correct"]=golden_out is not None
     template_data_dict["log_output"]=True
     if inputs is not None:
@@ -89,14 +89,14 @@ def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=Fal
     with open(pathlib.Path(network_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
 
-    gap_result=gap_get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board,gap_sdk_path=gap_sdk_path,run=run,clean=False)
+    result=get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board,sdk_path=sdk_path,run=run,clean=False)
     
-    return gap_result
+    return result
 
-def uart_network(match_res,network_path,gap_sdk_path="/gap_sdk",board:bool=False):
-    network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=board,run=False,gap_sdk_path=gap_sdk_path)
+def uart_network(match_res,network_path,sdk_path="/gap_sdk",board:bool=False):
+    network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=board,run=False,sdk_path=sdk_path)
 
-    gap_run_on_background(pathlib.Path(network_path),gap_sdk_path=gap_sdk_path,board=board)
+    run_on_background(pathlib.Path(network_path),sdk_path=sdk_path,board=board)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -185,12 +185,12 @@ if __name__=="__main__":
     )
 
     parser.add_argument(
-        "-g",
-        "--gap_sdk",
-        dest="gap_sdk_path",
+        "-s",
+        "--sdk_path",
+        dest="sdk_path",
         default="/home/gap_sdk_private/",
         type=str,
-        help="Provide the absolute path to the GAP SDK, defaults to /home/gap_sdk/private"
+        help="Provide the absolute path to the PULP(GAP) SDK, defaults to /home/gap_sdk/private"
     )
 
     parser.add_argument(
@@ -211,7 +211,7 @@ if __name__=="__main__":
     output_path=args.output_path
     compare_x86=args.x86
     board=args.board
-    gap_sdk_path=args.gap_sdk_path
+    sdk_path=args.sdk_path
     target=args.target
 
     if args.convexample:
@@ -230,7 +230,7 @@ if __name__=="__main__":
         cluster_active=args.cluster,
         accelerator_active=args.ne16,
         board=board,
-        gap_sdk_path=gap_sdk_path,
+        sdk_path=sdk_path,
         verbose=args.verbose>0,
         target_name=target
     )
