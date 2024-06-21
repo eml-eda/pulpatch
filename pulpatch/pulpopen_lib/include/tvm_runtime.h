@@ -24,7 +24,7 @@
 #include <tvm/runtime/crt/stack_allocator.h>
 #ifdef PULP
 #include <pmsis.h>
-#include <gap9_cluster.h>
+#include <gap_cluster.h>
 #endif
 #include <malloc_wrapper.h>
 
