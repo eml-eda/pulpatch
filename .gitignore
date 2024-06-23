@@ -8,7 +8,7 @@ x86*
 tmp
 gap_out_*
 match_output
-outputs
+output*
 tests
 *_tests
 results*
