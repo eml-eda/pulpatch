@@ -89,10 +89,11 @@ def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=Fal
     with open(pathlib.Path(network_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
 
-    result=get_result(pathlib.Path(network_path),verbose=False,keep_result=True,board=board,sdk_path=sdk_path,run=run,clean=False)
+    result=get_result(pathlib.Path(network_path),verbose=False,keep_result=True,target=target_name,board=board,sdk_path=sdk_path,run=run,clean=False)
     
     return result
 
+#ONLY FOR GAP9 CURRENTLY
 def uart_network(match_res,network_path,sdk_path="/gap_sdk",board:bool=False):
     network_at(match_res=match_res,network_path=network_path,inputs=None,golden_out=None,board=board,run=False,sdk_path=sdk_path)
 
