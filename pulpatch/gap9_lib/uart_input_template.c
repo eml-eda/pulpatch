@@ -4,6 +4,7 @@
 #include <tvm_runtime.h>
 #include <malloc_wrapper.h>
 #include <gdb_anchor.h>
+#define float32_t float
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 
 GAP_L2_DATA int32_t uart_status;

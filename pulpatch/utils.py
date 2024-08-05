@@ -20,10 +20,11 @@ def get_result(output_path: str, verbose: bool = False, keep_result: bool = Fals
                    clean: bool=False, sdk_path="/gap_sdk",target:str="gap9"):
 
     output={"output":[-1,-1,-1,-1],"correct":False,"run":run}
-    print("Building ...")
     if target!="gap9":
         modify_lib_0(str(output_path))
+    #print("Building ...",output_path,board,sdk_path)
     with open(output_path/"gap_output.json","wb") as logfile:
+        #print("Running",str(pathlib.Path(os.path.dirname(__file__)))+("/scripts/run_gap9_match.sh" if target=="gap9" else "/scripts/pulp_open.sh"))
         output1 = subprocess.Popen([str(pathlib.Path(os.path.dirname(__file__)))+("/scripts/run_gap9_match.sh" if target=="gap9" else "/scripts/pulp_open.sh"),
                                     output_path,"board" if board else "gvsoc",
                                     str(pathlib.Path(os.path.dirname(__file__))),

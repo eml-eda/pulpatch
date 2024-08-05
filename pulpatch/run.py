@@ -76,12 +76,15 @@ def run_with(input_type="onnx",relay_mod=None, relay_params=None, filename=None,
     return result
 
 
-def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=False,run:bool=True,target_name:str="gap9",sdk_path="/gap_sdk"):
+def network_at(match_res,network_path,inputs=None,golden_out=None,
+               board:bool=False,run:bool=True,clean:bool=False,
+               target_name:str="gap9",sdk_path="/gap_sdk",
+               log_output:bool=False):
     main_code_template=Template(filename=str(pathlib.Path(os.path.dirname(__file__)))+f"{'/gap9_lib' if target_name=='gap9' else '/pulpopen_lib'}/{'fixed' if inputs is not None else 'uart'}_input_template.c")
     template_data_dict=match_res.__dict__
     template_data_dict["target"]=target_name
     template_data_dict["compare_with_correct"]=golden_out is not None
-    template_data_dict["log_output"]=True
+    template_data_dict["log_output"]=log_output
     if inputs is not None:
         template_data_dict["inputs"]=[{"c_arr_size":input_["size"],"c_arr_values":c_friendly_npvalue(np.asarray(input_["values"])),**input_} for input_ in inputs]
 
@@ -89,7 +92,7 @@ def network_at(match_res,network_path,inputs=None,golden_out=None,board:bool=Fal
     with open(pathlib.Path(network_path)/"src/main.c","w") as main_file:
         main_file.write(main_code)
 
-    result=get_result(pathlib.Path(network_path),verbose=False,keep_result=True,target=target_name,board=board,sdk_path=sdk_path,run=run,clean=False)
+    result=get_result(pathlib.Path(network_path),verbose=False,keep_result=True,target=target_name,board=board,sdk_path=sdk_path,run=run,clean=clean)
     
     return result
 

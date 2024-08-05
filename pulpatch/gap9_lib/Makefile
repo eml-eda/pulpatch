@@ -38,10 +38,8 @@ OPT_LEVEL = 3
 # Need to link in libm for math.h inclusion in softmax operator
 APP_CFLAGS += -DNUM_CORES=$(CORE) -g $(INC_PATHS) -DNDEBUG -O$(OPT_LEVEL) -DPULP 
 # GAP9 fixes, the first because abort() is not in stdlib. The second to avoid a crt_backend_api.c error
-APP_CFLAGS += -Dabort\(\)=exit\(\-\1\)  -Wno-error=format -w
-#-fno-indirect-inlining -flto -w
-APP_LDFLAGS += -lm 
-#-Wl,--print-memory-usage -flto
+APP_CFLAGS += -Dabort\(\)=exit\(\-\1\)  -Wno-error=format -w -fno-indirect-inlining -w -flto
+APP_LDFLAGS += -lm -Wl,--print-memory-usage -flto
 
 
 

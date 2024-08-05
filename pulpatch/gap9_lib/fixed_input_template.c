@@ -4,8 +4,11 @@
 #include <tvm_runtime.h>
 #include <malloc_wrapper.h>
 #include <gdb_anchor.h>
+#define float32_t float
+
 #define MAX_PRINT_ERRORS 128
 #define STOP_AT_FIRST_ERROR 0
+
 int abs(int v) {return v * ((v > 0) - (v < 0)); }
 % for input_ in inputs:
 uint8_t ${input_["name"]}[${input_["c_arr_size"]}]=${input_["c_arr_values"]};
